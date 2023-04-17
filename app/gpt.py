@@ -19,10 +19,26 @@ from app.util import get_language_code, get_youtube_video_id
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 SPEECH_KEY = os.environ.get('SPEECH_KEY')
 SPEECH_REGION = os.environ.get('SPEECH_REGION')
+
+OPENAI_API_TYPE = os.environ.get('OPENAI_API_TYPE')
+OPENAI_API_VERSION = os.environ.get('OPENAI_API_VERSION')
+OPENAI_API_BASE = os.environ.get('OPENAI_API_BASE')
+OPENAI_API_MODEL = os.environ.get('OPENAI_API_MODEL')
+
 openai.api_key = OPENAI_API_KEY
 
-llm_predictor = LLMPredictor(llm=ChatOpenAI(
-    temperature=0.2, model_name="gpt-3.5-turbo"))
+if OPENAI_API_TYPE:
+    openai.api_type = OPENAI_API_TYPE
+if OPENAI_API_VERSION:
+    openai.api_version = OPENAI_API_VERSION
+if OPENAI_API_BASE:
+    openai.api_base = OPENAI_API_BASE
+if not OPENAI_API_MODEL:
+    llm_predictor = LLMPredictor(llm=ChatOpenAI(
+        temperature=0.2, model_name="gpt-3.5-turbo"))
+else:
+    llm_predictor = LLMPredictor(llm=ChatOpenAI(
+        temperature=0.2, model_name=OPENAI_API_MODEL))            
 
 index_cache_web_dir = Path('/tmp/myGPTReader/cache_web/')
 index_cache_voice_dir = Path('/tmp/myGPTReader/voice/')
