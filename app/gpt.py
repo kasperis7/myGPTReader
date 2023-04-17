@@ -9,6 +9,7 @@ from pathlib import Path
 from llama_index import GPTSimpleVectorIndex, LLMPredictor, RssReader, SimpleDirectoryReader
 from llama_index.readers.schema.base import Document
 from langchain.chat_models import ChatOpenAI
+from langchain.llms import AzureOpenAI
 from azure.cognitiveservices.speech import SpeechConfig, SpeechSynthesizer, ResultReason, CancellationReason, SpeechSynthesisOutputFormat
 from azure.cognitiveservices.speech.audio import AudioOutputConfig
 
@@ -19,10 +20,25 @@ from app.util import get_language_code, get_youtube_video_id
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 SPEECH_KEY = os.environ.get('SPEECH_KEY')
 SPEECH_REGION = os.environ.get('SPEECH_REGION')
+OPENAI_API_TYPE = os.environ.get('OPENAI_API_TYPE')
+AZURE_DEPLOY_NAME = os.environ.get('AZURE_DEPLOY_NAME')
+AZURE_API_BASE = os.environ.get('AZURE_API_BASE')
 openai.api_key = OPENAI_API_KEY
 
-llm_predictor = LLMPredictor(llm=ChatOpenAI(
-    temperature=0.2, model_name="gpt-3.5-turbo"))
+if OPENAI_API_TYPE == 'azure':
+	openai.api_type = OPENAI_API_TYPE
+	openai.api_base = AZURE_API_BASE
+	openai.api_version = "2023-03-15-preview"
+	llm = AzureOpenAI(deployment_name=AZURE_DEPLOY_NAME, model_kwargs={
+		"api_key": openai.api_key,
+		"api_base": openai.api_base,
+		"api_type": openai.api_type,
+		"api_version": openai.api_version,
+	})
+	llm_predictor = LLMPredictor(llm=llm)
+else:
+	llm_predictor = LLMPredictor(llm=ChatOpenAI(
+    	temperature=0.2, model_name="gpt-3.5-turbo"))
 
 index_cache_web_dir = Path('/tmp/myGPTReader/cache_web/')
 index_cache_voice_dir = Path('/tmp/myGPTReader/voice/')
@@ -105,10 +121,17 @@ def get_answer_from_chatGPT(messages):
     dialog_messages = format_dialog_messages(messages)
     logging.info('=====> Use chatGPT to answer!')
     logging.info(dialog_messages)
-    completion = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": dialog_messages}]
-    )
+    if OPENAI_API_TYPE == 'azure':
+		completion = openai.ChatCompletion.create(
+			deployment_id=AZURE_DEPLOY_NAME,
+		    model="gpt-35-turbo",
+		    messages=[{"role": "user", "content": dialog_messages}]
+		)
+    else:
+		completion = openai.ChatCompletion.create(
+		    model="gpt-3.5-turbo",
+		    messages=[{"role": "user", "content": dialog_messages}]
+		)
     logging.info(completion.usage)
     total_tokens = completion.usage.total_tokens
     return completion.choices[0].message.content, total_tokens, None
