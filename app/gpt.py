@@ -9,7 +9,6 @@ from pathlib import Path
 from llama_index import GPTSimpleVectorIndex, LLMPredictor, RssReader, SimpleDirectoryReader
 from llama_index.readers.schema.base import Document
 from langchain.chat_models import ChatOpenAI
-from langchain.llms import AzureOpenAI
 from azure.cognitiveservices.speech import SpeechConfig, SpeechSynthesizer, ResultReason, CancellationReason, SpeechSynthesisOutputFormat
 from azure.cognitiveservices.speech.audio import AudioOutputConfig
 
@@ -20,25 +19,10 @@ from app.util import get_language_code, get_youtube_video_id
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 SPEECH_KEY = os.environ.get('SPEECH_KEY')
 SPEECH_REGION = os.environ.get('SPEECH_REGION')
-
-OPENAI_API_TYPE = os.environ.get('OPENAI_API_TYPE')
-AZURE_API_VERSION = os.environ.get('AZURE_API_VERSION')
-AZURE_API_BASE = os.environ.get('AZURE_API_BASE')
-AZURE_DEPLOY_NAME = os.environ.get('AZURE_DEPLOY_NAME')
-
 openai.api_key = OPENAI_API_KEY
 
-if OPENAI_API_TYPE:
-    openai.api_type = OPENAI_API_TYPE
-if AZURE_API_VERSION:
-    openai.api_version = AZURE_API_VERSION
-if AZURE_API_BASE:
-    openai.api_base = AZURE_API_BASE
-if OPENAI_API_TYPE != 'azure':
-    llm_predictor = LLMPredictor(llm=ChatOpenAI(
-        temperature=0.2, model_name="gpt-3.5-turbo"))
-else:
-    llm_predictor = LLMPredictor(llm=AzureOpenAI(model_name = AZURE_DEPLOY_NAME))            
+llm_predictor = LLMPredictor(llm=ChatOpenAI(
+    temperature=0.2, model_name="gpt-3.5-turbo"))
 
 index_cache_web_dir = Path('/tmp/myGPTReader/cache_web/')
 index_cache_voice_dir = Path('/tmp/myGPTReader/voice/')
